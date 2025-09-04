@@ -63,7 +63,12 @@ if "PYLINTHOME" in os.environ:
 elif USER_HOME == "~":
     PYLINT_HOME = ".pylint.d"
 else:
-    PYLINT_HOME = os.path.join(USER_HOME, ".pylint.d")
+    # XDG Base Directory Specification
+    xdg_data_home = os.environ.get("XDG_DATA_HOME")
+    if xdg_data_home:
+        PYLINT_HOME = os.path.join(xdg_data_home, "pylint")
+    else:
+        PYLINT_HOME = os.path.join(USER_HOME, ".local", "share", "pylint")
 
 
 def _get_pdata_path(base_name, recurs):
@@ -83,7 +88,7 @@ def load_results(base):
 def save_results(results, base):
     if not os.path.exists(PYLINT_HOME):
         try:
-            os.mkdir(PYLINT_HOME)
+            os.makedirs(PYLINT_HOME)
         except OSError:
             print("Unable to create directory %s" % PYLINT_HOME, file=sys.stderr)
     data_file = _get_pdata_path(base, 1)
@@ -110,8 +115,8 @@ ENV_HELP = (
 The following environment variables are used:
     * PYLINTHOME
     Path to the directory where persistent data for the run will be stored. If
-not found, it defaults to ~/.pylint.d/ or .pylint.d (in the current working
-directory).
+not found, it defaults to ~/.local/share/pylint/ (or $XDG_DATA_HOME/pylint/ if 
+XDG_DATA_HOME is set) or .pylint.d (in the current working directory).
     * PYLINTRC
     Path to the configuration file. See the documentation for the method used
 to search for configuration file.
