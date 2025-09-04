@@ -631,7 +631,8 @@ def test_pylint_home():
     if uhome == "~":
         expected = ".pylint.d"
     else:
-        expected = os.path.join(uhome, ".pylint.d")
+        # XDG Base Directory Specification: use ~/.local/share/pylint
+        expected = os.path.join(uhome, ".local", "share", "pylint")
     assert config.PYLINT_HOME == expected
 
     try:
@@ -647,6 +648,27 @@ def test_pylint_home():
                 pass
     finally:
         del os.environ["PYLINTHOME"]
+
+
+@pytest.mark.usefixtures("pop_pylintrc")
+def test_pylint_home_xdg():
+    """Test XDG Base Directory Specification compliance."""
+    uhome = os.path.expanduser("~")
+    
+    # Test with XDG_DATA_HOME set
+    try:
+        xdg_path = join(tempfile.gettempdir(), "xdg_data")
+        os.environ["XDG_DATA_HOME"] = xdg_path
+        try:
+            reload(config)
+            expected = os.path.join(xdg_path, "pylint")
+            assert config.PYLINT_HOME == expected
+        finally:
+            pass
+    finally:
+        os.environ.pop("XDG_DATA_HOME", None)
+        # Reload to reset to default behavior
+        reload(config)
 
 
 @pytest.mark.usefixtures("pop_pylintrc")
